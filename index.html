@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14151d">
+  <title>Каскад · 2048</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/main.js" defer></script>
+</head>
+<body>
+  <main class="game" aria-labelledby="game-title">
+    <header class="game-intro">
+      <p class="game-number">2048</p>
+      <h1 id="game-title">Каскад</h1>
+      <p class="game-description">Сдвигай плитки, чтобы объединять одинаковые числа. Собери 2048!</p>
+
+      <div class="score-card">
+        <label for="score">Очки</label>
+        <output id="score" aria-live="polite">0</output>
+      </div>
+
+      <div class="game-actions">
+        <button class="button button-primary" id="restart" type="button">Начать заново</button>
+        <button class="button" id="undo" type="button" disabled>Отменить ход</button>
+        <button class="button" id="show-leaderboard" type="button" aria-haspopup="dialog">Таблица рекордов</button>
+      </div>
+    </header>
+
+    <section class="play-area" aria-label="Игровая зона">
+      <div class="board" id="board" role="group" aria-label="Игровое поле 4 на 4"></div>
+      <p class="keyboard-hint">Управление стрелками на клавиатуре</p>
+
+      <div class="direction-pad" id="direction-pad" role="group" aria-label="Управление плитками">
+        <button class="button" data-direction="left" type="button" aria-label="Влево">←</button>
+        <button class="button" data-direction="up" type="button" aria-label="Вверх">↑</button>
+        <button class="button" data-direction="down" type="button" aria-label="Вниз">↓</button>
+        <button class="button" data-direction="right" type="button" aria-label="Вправо">→</button>
+      </div>
+    </section>
+  </main>
+
+  <dialog class="dialog" id="leaderboard" aria-labelledby="leaderboard-title">
+    <h2 id="leaderboard-title">Таблица рекордов</h2>
+    <table class="leaderboard-table">
+      <thead>
+        <tr>
+          <th scope="col">Имя</th>
+          <th scope="col">Очки</th>
+          <th scope="col">Дата</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboard-entries"></tbody>
+    </table>
+    <p class="empty-leaderboard" id="empty-leaderboard">Здесь появятся сохранённые результаты.</p>
+    <form method="dialog">
+      <button class="button" type="submit">Закрыть</button>
+    </form>
+  </dialog>
+
+  <dialog class="dialog" id="game-over" aria-labelledby="game-over-title">
+    <h2 id="game-over-title">Игра окончена</h2>
+    <p id="game-over-message" aria-live="polite">Ходов больше нет.</p>
+    <form class="record-form" id="record-form">
+      <label for="player-name">Твоё имя</label>
+      <input id="player-name" name="player-name" type="text" autocomplete="nickname" maxlength="32" required>
+      <button class="button button-primary" type="submit">Сохранить результат</button>
+    </form>
+    <button class="button" id="restart-after-game" type="button">Начать заново</button>
+  </dialog>
+</body>
+</html>
