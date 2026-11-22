@@ -221,6 +221,12 @@ h1 {
   color: var(--muted);
 }
 
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .record-form input {
   width: 100%;
   background: #14151d;
