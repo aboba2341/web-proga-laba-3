@@ -39,51 +39,55 @@ function getLineIndices(line, direction) {
   });
 }
 
-function mergeLine(values) {
-  let tiles = values.filter(value => value !== 0);
+function slideTiles(tiles, lines) {
+  const nextTiles = Array(CELL_COUNT).fill(0);
+  const movements = [];
+  const merged = [];
   let score = 0;
 
-  while (true) {
-    const nextTiles = [];
+  for (const line of lines) {
+    const occupied = line.filter(index => tiles[index] !== 0);
+    let target = 0;
 
-    // Once a pair merges, its result can merge again on the next pass.
-    for (let index = 0; index < tiles.length; index += 1) {
-      const value = tiles[index];
-      if (value === tiles[index + 1]) {
-        nextTiles.push(value * 2);
-        score += value * 2;
+    for (let index = 0; index < occupied.length; index += 1) {
+      const from = occupied[index];
+      const to = line[target];
+      const value = tiles[from];
+      const next = occupied[index + 1];
+      target += 1;
+      nextTiles[to] = value;
+
+      if (from !== to) {
+        movements.push({ from, to });
+      }
+
+      if (value === tiles[next]) {
+        nextTiles[to] = value * 2;
+        score += nextTiles[to];
+        movements.push({ from: next, to });
+        merged.push(to);
         index += 1;
-      } else {
-        nextTiles.push(value);
       }
     }
-
-    if (nextTiles.length === tiles.length) {
-      return { tiles: nextTiles, score };
-    }
-    tiles = nextTiles;
   }
+
+  return { tiles: nextTiles, movements, merged, score };
 }
 
 function moveTiles(tiles, direction) {
-  const nextTiles = Array(CELL_COUNT).fill(0);
+  const steps = [];
+  const lines = Array.from({ length: BOARD_SIZE }, (_, line) => getLineIndices(line, direction));
   let score = 0;
 
-  for (let line = 0; line < BOARD_SIZE; line += 1) {
-    const indices = getLineIndices(line, direction);
-    const merged = mergeLine(indices.map(index => tiles[index]));
-
-    score += merged.score;
-    merged.tiles.forEach((value, offset) => {
-      nextTiles[indices[offset]] = value;
-    });
+  // Results from one pass may merge again on the next pass.
+  let step = slideTiles(tiles, lines);
+  while (step.movements.length > 0) {
+    steps.push(step);
+    score += step.score;
+    step = slideTiles(step.tiles, lines);
   }
 
-  return {
-    tiles: nextTiles,
-    score,
-    changed: nextTiles.some((value, index) => value !== tiles[index]),
-  };
+  return { tiles: step.tiles, score, changed: steps.length > 0, steps };
 }
 
 function hasAvailableMoves(tiles) {

@@ -154,9 +154,14 @@ h1 {
   height: 100%;
   border-radius: inherit;
   color: #1e1b2c;
-  background: #e1d7fe;
+  background: hsl(var(--tile-hue, 252) 84% 84%);
   font: 750 clamp(1rem, 3.7vw, 2.25rem) ui-monospace, monospace;
   letter-spacing: -0.06em;
+}
+
+.tile-moving {
+  position: relative;
+  z-index: 1;
 }
 
 .tile[data-value="2"] { background: #d9d1ff; }

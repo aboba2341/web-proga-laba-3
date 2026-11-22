@@ -1,4 +1,3 @@
-const board = document.querySelector('#board');
 const score = document.querySelector('#score');
 const restartButton = document.querySelector('#restart');
 const undoButton = document.querySelector('#undo');
@@ -20,36 +19,19 @@ const directionsByKey = new Map([
   ['ArrowRight', 'right'],
 ]);
 
-const cells = Array.from({ length: CELL_COUNT }, () => {
-  const cell = document.createElement('div');
-  cell.className = 'cell';
-  return cell;
-});
-board.append(...cells);
-
 let session = loadSession();
+let activeMove = null;
+let queuedDirection = null;
 
 function renderGame() {
   const { game, previousGame } = session;
-  cells.forEach((cell, index) => {
-    const value = game.tiles[index];
-    if (value === 0) {
-      cell.replaceChildren();
-      return;
-    }
-
-    const tile = document.createElement('span');
-    tile.className = 'tile';
-    tile.dataset.value = value;
-    tile.textContent = value;
-    cell.replaceChildren(tile);
-  });
+  renderTiles(game.tiles);
 
   const finished = !hasAvailableMoves(game.tiles);
   score.value = game.score;
   undoButton.disabled = finished || previousGame === null;
 
-  if (finished) {
+  if (finished && !gameOver.open) {
     gameOverScore.value = game.score;
     const recordSaved = loadRecord(session.id) !== null;
     recordForm.hidden = recordSaved;
@@ -58,13 +40,27 @@ function renderGame() {
   }
 }
 
+function cancelMoveAnimation() {
+  queuedDirection = null;
+  if (activeMove !== null) {
+    activeMove = null;
+    board.getAnimations({ subtree: true }).forEach(animation => animation.cancel());
+  }
+}
+
 function updateGame() {
+  cancelMoveAnimation();
   saveSession(session);
   renderGame();
 }
 
-function playMove(direction) {
+async function playMove(direction) {
   if (leaderboard.open || gameOver.open) {
+    return;
+  }
+
+  if (activeMove !== null) {
+    queuedDirection = direction;
     return;
   }
 
@@ -78,7 +74,27 @@ function playMove(direction) {
     tiles: addRandomTiles(moved.tiles, randomInteger(1, 2)),
     score: session.game.score + moved.score,
   };
-  updateGame();
+  saveSession(session);
+
+  if (reducedMotion.matches || typeof board.animate !== 'function') {
+    renderGame();
+    return;
+  }
+
+  const move = session.game;
+  activeMove = move;
+  undoButton.disabled = !hasAvailableMoves(move.tiles);
+  await animateBoardMove(moved.steps, move.tiles, () => activeMove === move);
+
+  if (activeMove === move) {
+    activeMove = null;
+    const nextDirection = queuedDirection;
+    queuedDirection = null;
+    renderGame();
+    if (nextDirection !== null) {
+      playMove(nextDirection);
+    }
+  }
 }
 
 function restartGame() {
@@ -98,6 +114,11 @@ function restartGame() {
 }
 
 function showLeaderboard() {
+  if (activeMove !== null) {
+    cancelMoveAnimation();
+    renderGame();
+  }
+
   const records = loadTopRecords();
   leaderboardEntries.replaceChildren(...records.map(record => {
     const row = document.createElement('tr');
@@ -120,7 +141,7 @@ restartAfterGame.addEventListener('click', restartGame);
 gameOver.addEventListener('cancel', event => event.preventDefault());
 
 undoButton.addEventListener('click', () => {
-  if (session.previousGame === null || gameOver.open) {
+  if (undoButton.disabled || leaderboard.open || gameOver.open) {
     return;
   }
 
